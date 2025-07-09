@@ -70,8 +70,8 @@ const faceMesh = new FaceMesh({
 faceMesh.setOptions({
   maxNumFaces: 1,
   refineLandmarks: true,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5
+  minDetectionConfidence: 0.6,
+  minTrackingConfidence: 0.6
 });
 
 faceMesh.onResults((results) => {
@@ -102,35 +102,35 @@ videoElement.addEventListener('loadedmetadata', () => {
 camera.start();
 
 function drawJewelry(landmarks, ctx) {
-  const earringScale = 0.09;   // Smaller earrings
-  const necklaceScale = 0.18;   // Smaller necklace
+  const earringScale = 0.04;
+  const necklaceScale = 0.1;
 
-  const left = {
-    x: landmarks[234].x * canvasElement.width,
-    y: landmarks[234].y * canvasElement.height + 16,
+  const leftEar = {
+    x: landmarks[132].x * canvasElement.width,
+    y: landmarks[132].y * canvasElement.height + 18,
   };
-  const right = {
-    x: landmarks[454].x * canvasElement.width,
-    y: landmarks[454].y * canvasElement.height + 16,
+  const rightEar = {
+    x: landmarks[361].x * canvasElement.width,
+    y: landmarks[361].y * canvasElement.height + 18,
   };
-  const chin = {
+  const neck = {
     x: landmarks[152].x * canvasElement.width,
-    y: landmarks[152].y * canvasElement.height + 35,
+    y: landmarks[152].y * canvasElement.height + 42,
   };
 
   if (currentMode === 'earring' && earringImg) {
     const width = earringImg.width * earringScale;
     const height = earringImg.height * earringScale;
 
-    ctx.drawImage(earringImg, left.x - width / 2, left.y, width, height);
-    ctx.drawImage(earringImg, right.x - width / 2, right.y, width, height);
+    ctx.drawImage(earringImg, leftEar.x - width / 2, leftEar.y, width, height);
+    ctx.drawImage(earringImg, rightEar.x - width / 2, rightEar.y, width, height);
   }
 
   if (currentMode === 'necklace' && necklaceImg) {
     const width = necklaceImg.width * necklaceScale;
     const height = necklaceImg.height * necklaceScale;
 
-    ctx.drawImage(necklaceImg, chin.x - width / 2, chin.y, width, height);
+    ctx.drawImage(necklaceImg, neck.x - width / 2, neck.y, width, height);
   }
 }
 

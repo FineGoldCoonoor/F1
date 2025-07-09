@@ -98,8 +98,8 @@ videoElement.addEventListener('loadedmetadata', () => {
 });
 
 function drawJewelry(landmarks, ctx) {
-  const earringScale = 0.09;
-  const necklaceScale = 0.22;
+  const earringScale = 0.06;
+  const necklaceScale = 0.15;
 
   const left = {
     x: landmarks[234].x * canvasElement.width,

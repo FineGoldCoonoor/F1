@@ -8,7 +8,7 @@ let necklaceImg = null;
 let earringSrc = '';
 let necklaceSrc = '';
 let lastSnapshotDataURL = '';
-let faceMeshResults = null;
+let lastLandmarks = null;
 
 function loadImage(src) {
   return new Promise((resolve) => {
@@ -75,11 +75,14 @@ faceMesh.setOptions({
 });
 
 faceMesh.onResults((results) => {
-  faceMeshResults = results;
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-  if (results.multiFaceLandmarks.length > 0) {
-    drawJewelry(results.multiFaceLandmarks[0], canvasCtx);
+  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+    lastLandmarks = results.multiFaceLandmarks[0];
+  }
+
+  if (lastLandmarks) {
+    drawJewelry(lastLandmarks, canvasCtx);
   }
 });
 
@@ -90,28 +93,29 @@ const camera = new Camera(videoElement, {
   width: 1280,
   height: 720
 });
-camera.start();
 
 videoElement.addEventListener('loadedmetadata', () => {
   canvasElement.width = videoElement.videoWidth;
   canvasElement.height = videoElement.videoHeight;
 });
 
+camera.start();
+
 function drawJewelry(landmarks, ctx) {
-  const earringScale = 0.06;
-  const necklaceScale = 0.19;
+  const earringScale = 0.045;   // Smaller earrings
+  const necklaceScale = 0.12;   // Smaller necklace
 
   const left = {
     x: landmarks[234].x * canvasElement.width,
-    y: landmarks[234].y * canvasElement.height + 12,
+    y: landmarks[234].y * canvasElement.height + 16,
   };
   const right = {
     x: landmarks[454].x * canvasElement.width,
-    y: landmarks[454].y * canvasElement.height + 12,
+    y: landmarks[454].y * canvasElement.height + 16,
   };
   const chin = {
     x: landmarks[152].x * canvasElement.width,
-    y: landmarks[152].y * canvasElement.height + 28,
+    y: landmarks[152].y * canvasElement.height + 35,
   };
 
   if (currentMode === 'earring' && earringImg) {
@@ -131,7 +135,7 @@ function drawJewelry(landmarks, ctx) {
 }
 
 function takeSnapshot() {
-  if (!faceMeshResults || faceMeshResults.multiFaceLandmarks.length === 0) {
+  if (!lastLandmarks) {
     alert("Face not detected. Please try again.");
     return;
   }
@@ -143,7 +147,7 @@ function takeSnapshot() {
   snapshotCanvas.height = videoElement.videoHeight;
   ctx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
 
-  drawJewelry(faceMeshResults.multiFaceLandmarks[0], ctx);
+  drawJewelry(lastLandmarks, ctx);
 
   lastSnapshotDataURL = snapshotCanvas.toDataURL('image/png');
   document.getElementById('snapshot-preview').src = lastSnapshotDataURL;

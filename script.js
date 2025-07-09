@@ -8,9 +8,7 @@ let necklaceImg = null;
 let earringSrc = '';
 let necklaceSrc = '';
 let lastSnapshotDataURL = '';
-
 let faceMeshResults = null;
-let lastLandmarks = null;
 
 function loadImage(src) {
   return new Promise((resolve) => {
@@ -46,7 +44,6 @@ function selectMode(mode) {
 function insertJewelryOptions(type, containerId, startIndex, endIndex) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
-
   for (let i = startIndex; i <= endIndex; i++) {
     const filename = `${type}${i}.png`;
     const btn = document.createElement('button');
@@ -78,43 +75,22 @@ faceMesh.setOptions({
 });
 
 faceMesh.onResults((results) => {
+  faceMeshResults = results;
+  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
   if (results.multiFaceLandmarks.length > 0) {
-    faceMeshResults = results;
-
-    // Apply smoothing
-    const newLandmarks = results.multiFaceLandmarks[0];
-    if (lastLandmarks) {
-      for (let i = 0; i < newLandmarks.length; i++) {
-        newLandmarks[i].x = (newLandmarks[i].x + lastLandmarks[i].x) / 2;
-        newLandmarks[i].y = (newLandmarks[i].y + lastLandmarks[i].y) / 2;
-        newLandmarks[i].z = (newLandmarks[i].z + lastLandmarks[i].z) / 2;
-      }
-    }
-
-    lastLandmarks = JSON.parse(JSON.stringify(newLandmarks)); // deep copy
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    drawJewelry(newLandmarks, canvasCtx);
+    drawJewelry(results.multiFaceLandmarks[0], canvasCtx);
   }
 });
 
 const camera = new Camera(videoElement, {
   onFrame: async () => {
-    try {
-      await faceMesh.send({ image: videoElement });
-    } catch (e) {
-      console.error("FaceMesh Error:", e);
-    }
+    await faceMesh.send({ image: videoElement });
   },
   width: 1280,
   height: 720
 });
-
-camera.start().then(() => {
-  console.log("Camera started successfully");
-}).catch((err) => {
-  console.error("Camera failed to start:", err);
-  alert("Failed to access the camera. Please check permissions or use HTTPS/localhost.");
-});
+camera.start();
 
 videoElement.addEventListener('loadedmetadata', () => {
   canvasElement.width = videoElement.videoWidth;
@@ -123,24 +99,25 @@ videoElement.addEventListener('loadedmetadata', () => {
 
 function drawJewelry(landmarks, ctx) {
   const earringScale = 0.09;
-  const necklaceScale = 0.2;
+  const necklaceScale = 0.22;
 
   const left = {
     x: landmarks[234].x * canvasElement.width,
-    y: landmarks[234].y * canvasElement.height + 8,
+    y: landmarks[234].y * canvasElement.height + 12,
   };
   const right = {
     x: landmarks[454].x * canvasElement.width,
-    y: landmarks[454].y * canvasElement.height + 8,
+    y: landmarks[454].y * canvasElement.height + 12,
   };
   const chin = {
     x: landmarks[152].x * canvasElement.width,
-    y: landmarks[152].y * canvasElement.height + 20,
+    y: landmarks[152].y * canvasElement.height + 28,
   };
 
   if (currentMode === 'earring' && earringImg) {
     const width = earringImg.width * earringScale;
     const height = earringImg.height * earringScale;
+
     ctx.drawImage(earringImg, left.x - width / 2, left.y, width, height);
     ctx.drawImage(earringImg, right.x - width / 2, right.y, width, height);
   }
@@ -148,6 +125,7 @@ function drawJewelry(landmarks, ctx) {
   if (currentMode === 'necklace' && necklaceImg) {
     const width = necklaceImg.width * necklaceScale;
     const height = necklaceImg.height * necklaceScale;
+
     ctx.drawImage(necklaceImg, chin.x - width / 2, chin.y, width, height);
   }
 }
@@ -160,10 +138,12 @@ function takeSnapshot() {
 
   const snapshotCanvas = document.createElement('canvas');
   const ctx = snapshotCanvas.getContext('2d');
+
   snapshotCanvas.width = videoElement.videoWidth;
   snapshotCanvas.height = videoElement.videoHeight;
   ctx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-  drawJewelry(lastLandmarks, ctx); // draw from smoothed landmarks
+
+  drawJewelry(faceMeshResults.multiFaceLandmarks[0], ctx);
 
   lastSnapshotDataURL = snapshotCanvas.toDataURL('image/png');
   document.getElementById('snapshot-preview').src = lastSnapshotDataURL;
